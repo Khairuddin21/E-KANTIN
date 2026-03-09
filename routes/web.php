@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\UserDashboardController;
+use App\Http\Controllers\PreOrderController;
+use App\Http\Controllers\OrderHistoryController;
 use Illuminate\Support\Facades\Route;
 
 // Landing
@@ -23,9 +26,16 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirectToGoogle'])->name('google.redirect');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback'])->name('google.callback');
 
-// Protected stubs (replace with real controllers later)
+// Student / Teacher Dashboard
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard',         fn() => 'Student/Teacher Dashboard')->name('dashboard');
+    Route::get('/dashboard', [UserDashboardController::class, 'dashboard'])->name('dashboard');
+    Route::get('/preorder',  [PreOrderController::class, 'menuList'])->name('preorder');
+    Route::post('/preorder', [PreOrderController::class, 'storeOrder'])->name('preorder.store');
+    Route::get('/orders',    [OrderHistoryController::class, 'index'])->name('orders');
+});
+
+// Admin / Seller / Cashier stubs
+Route::middleware('auth')->group(function () {
     Route::get('/admin/dashboard',   fn() => 'Admin Dashboard')->name('admin.dashboard');
     Route::get('/seller/dashboard',  fn() => 'Seller Dashboard')->name('seller.dashboard');
     Route::get('/cashier/dashboard', fn() => 'Cashier Dashboard')->name('cashier.dashboard');
