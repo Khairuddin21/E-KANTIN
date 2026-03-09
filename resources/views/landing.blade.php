@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="E-Canteen Pre-Order System — Order your school canteen food before break time.">
     <title>E-Canteen — Pre-Order Your Canteen Food</title>
+    <link rel="icon" type="image/png" href="{{ asset('img/Logo_SMK_Negeri_40_Jakarta.png') }}">
 
     {{-- Fonts --}}
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -268,11 +269,7 @@
             <div class="flex items-center justify-between h-20">
                 {{-- Logo --}}
                 <a href="#" class="flex items-center gap-3 group">
-                    <div class="w-10 h-10 bg-brand-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                    </div>
+                    <img src="{{ asset('img/Logo_SMK_Negeri_40_Jakarta.png') }}" alt="SMK Negeri 40 Jakarta" class="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300">
                     <span class="text-lg font-bold text-dark tracking-tight">E-<span class="text-brand-500">Canteen</span></span>
                 </a>
 
@@ -777,14 +774,17 @@
         <div class="max-w-7xl mx-auto px-6 lg:px-8">
             <div class="reveal-scale relative rounded-[2rem] overflow-hidden">
 
-                {{-- Background Image Container (not background-image, but actual img in container) --}}
+                {{-- Background Video Container --}}
                 <div class="absolute inset-0">
-                    <img
-                        src="https://i.pinimg.com/1200x/4e/bf/2a/4ebf2ad7f05e83c3f0467e89c95dcce7.jpg"
-                        alt=""
+                    <video
                         class="w-full h-full object-cover"
-                        loading="lazy"
-                    />
+                        autoplay
+                        loop
+                        muted
+                        playsinline
+                    >
+                        <source src="{{ asset('img/background kantin.mp4') }}" type="video/mp4">
+                    </video>
                     <div class="absolute inset-0 bg-dark/75"></div>
                 </div>
 
@@ -822,9 +822,7 @@
                 {{-- Brand (Golden ratio: 5/12 columns) --}}
                 <div class="md:col-span-5">
                     <div class="flex items-center gap-3 mb-5">
-                        <div class="w-10 h-10 bg-brand-500 rounded-full flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
+                        <img src="{{ asset('img/Logo_SMK_Negeri_40_Jakarta.png') }}" alt="SMK Negeri 40 Jakarta" class="w-10 h-10 object-contain">
                         <span class="text-lg font-bold text-white">E-<span class="text-brand-400">Canteen</span></span>
                     </div>
                     <p class="text-sm text-gray-500 leading-relaxed max-w-sm">
@@ -947,51 +945,6 @@
                 link.addEventListener('click', function() {
                     mobileMenu.classList.add('hidden');
                 });
-            });
-        }
-
-        /* ============================================
-           4. HERO PARALLAX — Mousemove on images
-              Uses golden ratio for movement intensity:
-              Main image:  moves at 1/φ² ≈ 0.382 factor
-              Food image:  moves at 1/φ  ≈ 0.618 factor
-        ============================================ */
-        const heroImageGroup = document.getElementById('heroImageGroup');
-
-        if (heroImageGroup && window.innerWidth >= 1024) {
-            const PHI_INV = 0.618;
-            const PHI_INV_SQ = 0.382;
-
-            document.querySelector('.hero-section').addEventListener('mousemove', function(e) {
-                const rect = this.getBoundingClientRect();
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-                const mouseX = e.clientX - rect.left - centerX;
-                const mouseY = e.clientY - rect.top - centerY;
-
-                // Normalize to -1 to 1
-                const nx = mouseX / centerX;
-                const ny = mouseY / centerY;
-
-                // Main blob — slower, more subtle (φ² factor)
-                const mainBlob = heroImageGroup.querySelector('.blob-main');
-                if (mainBlob) {
-                    mainBlob.style.transform = 'translate(' + (nx * 8 * PHI_INV_SQ) + 'px, ' + (ny * 8 * PHI_INV_SQ) + 'px)';
-                }
-
-                // Food blob — slightly more movement (φ factor)
-                const foodBlob = heroImageGroup.querySelector('.blob-food');
-                if (foodBlob) {
-                    foodBlob.style.transform = 'translate(' + (nx * 14 * PHI_INV) + 'px, ' + (ny * 14 * PHI_INV) + 'px)';
-                }
-            });
-
-            // Reset on mouse leave
-            document.querySelector('.hero-section').addEventListener('mouseleave', function() {
-                const mainBlob = heroImageGroup.querySelector('.blob-main');
-                const foodBlob = heroImageGroup.querySelector('.blob-food');
-                if (mainBlob) mainBlob.style.transform = 'translate(0, 0)';
-                if (foodBlob) foodBlob.style.transform = 'translate(0, 0)';
             });
         }
 

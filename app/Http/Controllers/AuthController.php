@@ -3,24 +3,52 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Enum;
-use Illuminate\Validation\Rules\Password;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function register(Request $request): JsonResponse
+    public function showLogin()
+    {
+        if (Auth::check()) {
+            return redirect($this->redirectByRole(Auth::user()->role));
+        }
+        return view('auth.login');
+    }
+
+    public function showRegister()
+    {
+        if (Auth::check()) {
+            return redirect($this->redirectByRole(Auth::user()->role));
+        }
+        return view('auth.register');
+    }
+
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email'    => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+            return redirect()->intended($this->redirectByRole(Auth::user()->role));
+        }
+
+        return back()
+            ->withInput($request->only('email'))
+            ->withErrors(['email' => 'Email atau password salah.']);
+    }
+
+    public function register(Request $request)
     {
         $validated = $request->validate([
             'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'confirmed', Password::min(8)],
-            'role'     => ['required', 'string', 'in:student,teacher'],
-            'class'    => ['nullable', 'string', 'max:50'],
+            'email'    => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'role'     => ['required', 'in:student,teacher'],
         ]);
 
         $user = User::create([
@@ -28,51 +56,29 @@ class AuthController extends Controller
             'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role'     => $validated['role'],
-            'class'    => $validated['class'] ?? null,
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        Auth::login($user);
+        $request->session()->regenerate();
 
-        return response()->json([
-            'message' => 'Registration successful.',
-            'user'    => $user,
-            'token'   => $token,
-        ], 201);
+        return redirect($this->redirectByRole($user->role));
     }
 
-    public function login(Request $request): JsonResponse
+    public function logout(Request $request)
     {
-        $request->validate([
-            'email'    => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ]);
-
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
-        }
-
-        $user = User::where('email', $request->email)->firstOrFail();
-
-        // Revoke previous tokens for this device
-        $user->tokens()->delete();
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Login successful.',
-            'user'    => $user,
-            'token'   => $token,
-        ]);
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/');
     }
 
-    public function logout(Request $request): JsonResponse
+    private function redirectByRole(string $role): string
     {
-        $request->user()->currentAccessToken()->delete();
-
-        return response()->json([
-            'message' => 'Logged out successfully.',
-        ]);
+        return match ($role) {
+            'super_admin' => '/admin/dashboard',
+            'seller'      => '/seller/dashboard',
+            'cashier'     => '/cashier/dashboard',
+            default       => '/dashboard',
+        };
     }
 }
