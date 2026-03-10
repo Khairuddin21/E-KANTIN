@@ -24,10 +24,10 @@
            class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {{ !request('category') ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50' }}">
             Semua
         </a>
-        @foreach(['makanan' => 'Makanan', 'minuman' => 'Minuman', 'snack' => 'Snack'] as $key => $label)
-            <a href="{{ route('seller.menus', ['category' => $key]) }}"
-               class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {{ request('category') === $key ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50' }}">
-                {{ $label }}
+        @foreach($categories as $cat)
+            <a href="{{ route('seller.menus', ['category' => $cat]) }}"
+               class="px-4 py-2 rounded-xl text-sm font-medium transition-colors {{ request('category') === $cat ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50' }}">
+                {{ $cat }}
             </a>
         @endforeach
     </div>
@@ -183,9 +183,9 @@
                     <label for="menuCategory" class="block text-sm font-medium text-gray-700 mb-1.5">Kategori <span class="text-red-400">*</span></label>
                     <select name="category" id="menuCategory" required
                             class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-400/30 focus:border-brand-400 outline-none transition-all">
-                        <option value="makanan">Makanan</option>
-                        <option value="minuman">Minuman</option>
-                        <option value="snack">Snack</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat }}">{{ $cat }}</option>
+                        @endforeach
                     </select>
                 </div>
 
@@ -254,7 +254,7 @@ function openAddModal() {
     document.getElementById('menuName').value = '';
     document.getElementById('menuDesc').value = '';
     document.getElementById('menuPrice').value = '';
-    document.getElementById('menuCategory').value = 'makanan';
+    document.getElementById('menuCategory').value = '{{ $categories->first() ?? "Makanan" }}';
     document.getElementById('submitBtn').textContent = 'Simpan Menu';
     resetImagePreview();
     document.getElementById('menuModal').classList.remove('hidden');

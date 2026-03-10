@@ -12,6 +12,10 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\SellerOrderController;
 use App\Http\Controllers\SellerReportController;
 use App\Http\Controllers\Seller\SellerWalletController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Admin\SellerManagementController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AdminWithdrawalController;
 use App\Http\Controllers\TopupController;
 use Illuminate\Support\Facades\Route;
@@ -88,7 +92,26 @@ Route::middleware(['auth', 'role:seller'])->prefix('seller')->group(function () 
 
 // Admin / Cashier stubs
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', fn() => 'Admin Dashboard')->name('admin.dashboard');
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+
+    // User Management
+    Route::get('/users',                    [UserManagementController::class, 'index'])->name('admin.users');
+    Route::patch('/users/{user}/toggle',    [UserManagementController::class, 'toggleStatus'])->name('admin.users.toggle');
+    Route::delete('/users/{user}',          [UserManagementController::class, 'destroy'])->name('admin.users.destroy');
+
+    // Seller Management
+    Route::get('/sellers',                       [SellerManagementController::class, 'index'])->name('admin.sellers');
+    Route::patch('/sellers/{user}/approve',      [SellerManagementController::class, 'approveSeller'])->name('admin.sellers.approve');
+    Route::patch('/sellers/{user}/deactivate',   [SellerManagementController::class, 'deactivateSeller'])->name('admin.sellers.deactivate');
+    Route::get('/sellers/{user}/menus',          [SellerManagementController::class, 'menus'])->name('admin.sellers.menus');
+
+    // Category Management
+    Route::get('/categories',                [CategoryController::class, 'index'])->name('admin.categories');
+    Route::post('/categories',               [CategoryController::class, 'store'])->name('admin.categories.store');
+    Route::put('/categories/{category}',     [CategoryController::class, 'update'])->name('admin.categories.update');
+    Route::delete('/categories/{category}',  [CategoryController::class, 'destroy'])->name('admin.categories.destroy');
+
+    // Withdrawals
     Route::get('/withdrawals',                [AdminWithdrawalController::class, 'index'])->name('admin.withdrawals');
     Route::patch('/withdrawals/{withdrawal}/approve', [AdminWithdrawalController::class, 'approve'])->name('admin.withdrawals.approve');
     Route::patch('/withdrawals/{withdrawal}/reject',  [AdminWithdrawalController::class, 'reject'])->name('admin.withdrawals.reject');

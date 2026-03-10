@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Menu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,8 +22,9 @@ class MenuController extends Controller
         }
 
         $menus = $query->latest()->get();
+        $categories = Category::orderBy('name')->pluck('name');
 
-        return view('seller.menus.index', compact('menus'));
+        return view('seller.menus.index', compact('menus', 'categories'));
     }
 
     public function store(Request $request)
@@ -31,7 +33,7 @@ class MenuController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'price'       => 'required|integer|min:0',
-            'category'    => 'required|in:makanan,minuman,snack',
+            'category'    => 'required|string|max:100|exists:categories,name',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'image_url'   => 'nullable|url|max:2048',
         ]);
@@ -61,7 +63,7 @@ class MenuController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'price'       => 'required|integer|min:0',
-            'category'    => 'required|in:makanan,minuman,snack',
+            'category'    => 'required|string|max:100|exists:categories,name',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'image_url'   => 'nullable|url|max:2048',
         ]);

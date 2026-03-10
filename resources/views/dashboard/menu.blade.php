@@ -82,11 +82,12 @@
                     class="px-4 py-2.5 rounded-xl text-sm font-medium transition-colors">
                 Semua
             </button>
-            <template x-for="cat in ['makanan', 'minuman', 'snack']" :key="cat">
-                <button @click="category = cat" :class="category === cat ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
-                        class="px-4 py-2.5 rounded-xl text-sm font-medium transition-colors capitalize" x-text="cat">
-                </button>
-            </template>
+            @foreach($categories as $cat)
+            <button @click="category = '{{ $cat }}'" :class="category === '{{ $cat }}' ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
+                    class="px-4 py-2.5 rounded-xl text-sm font-medium transition-colors">
+                {{ $cat }}
+            </button>
+            @endforeach
         </div>
     </div>
 

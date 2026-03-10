@@ -14,8 +14,9 @@ class CartController extends Controller
         $menus = Menu::with('seller')->where('is_available', true)->latest()->get();
         $cartCount = Cart::where('user_id', Auth::id())->sum('quantity');
         $sellers = $menus->pluck('seller')->unique('id')->filter()->values();
+        $categories = \App\Models\Category::orderBy('name')->pluck('name');
 
-        return view('dashboard.menu', compact('menus', 'cartCount', 'sellers'));
+        return view('dashboard.menu', compact('menus', 'cartCount', 'sellers', 'categories'));
     }
 
     public function index()
