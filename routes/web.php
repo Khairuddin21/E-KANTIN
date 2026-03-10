@@ -5,6 +5,8 @@ use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\PreOrderController;
 use App\Http\Controllers\OrderHistoryController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\SellerDashboardController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\SellerOrderController;
@@ -17,6 +19,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('landing');
 });
+
+// Midtrans Notification Webhook (no auth, no CSRF)
+Route::post('/midtrans/notification', [CheckoutController::class, 'midtransNotification'])
+    ->name('midtrans.notification');
 
 // Auth
 Route::middleware('guest')->group(function () {
@@ -38,6 +44,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/preorder',  [PreOrderController::class, 'menuList'])->name('preorder');
     Route::post('/preorder', [PreOrderController::class, 'storeOrder'])->name('preorder.store');
     Route::get('/orders',    [OrderHistoryController::class, 'index'])->name('orders');
+
+    // Menu, Cart & Checkout
+    Route::get('/student/menu',      [CartController::class, 'menuPage'])->name('student.menu');
+    Route::get('/student/cart',      [CartController::class, 'index'])->name('student.cart');
+    Route::post('/student/cart/add', [CartController::class, 'addToCart'])->name('student.cart.add');
+    Route::patch('/student/cart/update', [CartController::class, 'updateQuantity'])->name('student.cart.update');
+    Route::delete('/student/cart/remove', [CartController::class, 'removeFromCart'])->name('student.cart.remove');
+    Route::get('/student/cart/count', [CartController::class, 'count'])->name('student.cart.count');
+    Route::get('/student/checkout',  [CheckoutController::class, 'checkout'])->name('student.checkout');
+    Route::post('/student/checkout', [CheckoutController::class, 'processCheckout'])->name('student.checkout.process');
+    Route::get('/student/order-success/{order}', [CheckoutController::class, 'orderSuccess'])->name('student.order.success');
 });
 
 // Seller Dashboard

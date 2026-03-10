@@ -4,7 +4,7 @@
 @section('heading', 'Dashboard')
 
 @section('content')
-<div class="space-y-8 max-w-6xl">
+<div class="space-y-8">
 
     {{-- Welcome + Balance Row --}}
     <div class="grid md:grid-cols-2 gap-6">

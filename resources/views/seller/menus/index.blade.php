@@ -45,7 +45,8 @@
                 {{-- Image --}}
                 <div class="relative aspect-[4/3] bg-gray-100 overflow-hidden">
                     @if($menu->image)
-                        <img src="{{ asset('storage/' . $menu->image) }}" alt="{{ $menu->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        @php $imgSrc = str_starts_with($menu->image, 'http') ? $menu->image : asset('storage/' . $menu->image); @endphp
+                        <img src="{{ $imgSrc }}" alt="{{ $menu->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                     @else
                         <div class="w-full h-full flex items-center justify-center text-gray-300">
                             <svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z"/></svg>
@@ -73,7 +74,11 @@
 
                     {{-- Actions --}}
                     <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                        <button onclick="openEditModal({{ $menu->id }}, '{{ addslashes($menu->name) }}', '{{ addslashes($menu->description ?? '') }}', {{ $menu->price }}, '{{ $menu->category }}')"
+                        @php
+                            $imgRaw     = $menu->image ?? '';
+                            $imgDisplay = $menu->image ? (str_starts_with($menu->image, 'http') ? $menu->image : asset('storage/' . $menu->image)) : '';
+                        @endphp
+                        <button onclick="openEditModal({{ $menu->id }}, '{{ addslashes($menu->name) }}', '{{ addslashes($menu->description ?? '') }}', {{ $menu->price }}, '{{ $menu->category }}', '{{ addslashes($imgRaw) }}', '{{ addslashes($imgDisplay) }}')"
                                 class="flex-1 px-3 py-2 text-xs font-medium text-brand-500 bg-brand-50 rounded-lg hover:bg-brand-100 transition-colors text-center">
                             Edit
                         </button>
@@ -113,18 +118,42 @@
                 @csrf
                 <div id="methodField"></div>
 
-                {{-- Image Upload --}}
+                {{-- Image --}}
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Foto Menu</label>
-                    <div class="relative">
+                    {{-- Tab Toggle --}}
+                    <div class="flex gap-1 p-1 bg-gray-100 rounded-xl mb-3">
+                        <button type="button" id="tabUpload" onclick="switchImageTab('upload')"
+                                class="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors bg-white text-gray-700 shadow-sm">
+                            Upload File
+                        </button>
+                        <button type="button" id="tabUrl" onclick="switchImageTab('url')"
+                                class="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors text-gray-400">
+                            Link URL
+                        </button>
+                    </div>
+                    {{-- Upload Section --}}
+                    <div id="uploadSection">
                         <input type="file" name="image" id="imageInput" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="previewImage(this)">
-                        <div id="imagePreview" onclick="document.getElementById('imageInput').click()" class="w-full h-40 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center cursor-pointer hover:border-brand-300 hover:bg-brand-50/30 transition-colors overflow-hidden">
+                        <div id="imagePreview" onclick="document.getElementById('imageInput').click()"
+                             class="w-full h-40 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center cursor-pointer hover:border-brand-300 hover:bg-brand-50/30 transition-colors overflow-hidden">
                             <div id="imagePlaceholder" class="text-center">
                                 <svg class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z"/></svg>
                                 <p class="text-xs text-gray-400">Klik untuk upload gambar</p>
                                 <p class="text-[10px] text-gray-300 mt-0.5">JPG, PNG, WebP · Maks 2MB</p>
                             </div>
                         </div>
+                    </div>
+                    {{-- URL Section --}}
+                    <div id="urlSection" class="hidden">
+                        <input type="text" name="image_url" id="imageUrlInput"
+                               placeholder="https://example.com/foto-makanan.jpg"
+                               oninput="previewImageUrl(this)"
+                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-400/30 focus:border-brand-400 outline-none transition-all">
+                        <div id="urlPreviewContainer" class="mt-2 w-full h-40 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden hidden">
+                            <img id="urlPreviewImg" src="" alt="Preview" class="w-full h-full object-cover">
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1.5">Masukkan URL gambar yang dapat diakses publik.</p>
                     </div>
                 </div>
 
@@ -188,6 +217,36 @@
 
 @push('scripts')
 <script>
+function switchImageTab(tab) {
+    const uploadSection = document.getElementById('uploadSection');
+    const urlSection    = document.getElementById('urlSection');
+    const tabUpload     = document.getElementById('tabUpload');
+    const tabUrl        = document.getElementById('tabUrl');
+
+    if (tab === 'upload') {
+        tabUpload.classList.add('bg-white', 'text-gray-700', 'shadow-sm');
+        tabUpload.classList.remove('text-gray-400');
+        tabUrl.classList.remove('bg-white', 'text-gray-700', 'shadow-sm');
+        tabUrl.classList.add('text-gray-400');
+        uploadSection.classList.remove('hidden');
+        urlSection.classList.add('hidden');
+        document.getElementById('imageUrlInput').value = '';
+        document.getElementById('urlPreviewContainer').classList.add('hidden');
+        document.getElementById('urlPreviewImg').src = '';
+    } else {
+        tabUrl.classList.add('bg-white', 'text-gray-700', 'shadow-sm');
+        tabUrl.classList.remove('text-gray-400');
+        tabUpload.classList.remove('bg-white', 'text-gray-700', 'shadow-sm');
+        tabUpload.classList.add('text-gray-400');
+        urlSection.classList.remove('hidden');
+        uploadSection.classList.add('hidden');
+        document.getElementById('imageInput').value = '';
+        const existingImg = document.getElementById('imagePreview').querySelector('img');
+        if (existingImg) existingImg.remove();
+        document.getElementById('imagePlaceholder').classList.remove('hidden');
+    }
+}
+
 function openAddModal() {
     document.getElementById('modalTitle').textContent = 'Tambah Menu';
     document.getElementById('menuForm').action = '{{ route("seller.menus.store") }}';
@@ -201,7 +260,7 @@ function openAddModal() {
     document.getElementById('menuModal').classList.remove('hidden');
 }
 
-function openEditModal(id, name, desc, price, category) {
+function openEditModal(id, name, desc, price, category, imageRaw, imageDisplay) {
     document.getElementById('modalTitle').textContent = 'Edit Menu';
     document.getElementById('menuForm').action = '/seller/menus/' + id;
     document.getElementById('methodField').innerHTML = '<input type="hidden" name="_method" value="PUT">';
@@ -211,6 +270,15 @@ function openEditModal(id, name, desc, price, category) {
     document.getElementById('menuCategory').value = category;
     document.getElementById('submitBtn').textContent = 'Perbarui Menu';
     resetImagePreview();
+    if (imageRaw) {
+        if (imageRaw.startsWith('http')) {
+            switchImageTab('url');
+            document.getElementById('imageUrlInput').value = imageRaw;
+            previewImageUrl(document.getElementById('imageUrlInput'));
+        } else if (imageDisplay) {
+            showExistingImagePreview(imageDisplay);
+        }
+    }
     document.getElementById('menuModal').classList.remove('hidden');
 }
 
@@ -223,9 +291,7 @@ function previewImage(input) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const preview = document.getElementById('imagePreview');
-            const placeholder = document.getElementById('imagePlaceholder');
-            placeholder.classList.add('hidden');
-            // Remove existing preview img if any
+            document.getElementById('imagePlaceholder').classList.add('hidden');
             const existingImg = preview.querySelector('img');
             if (existingImg) existingImg.remove();
             const img = document.createElement('img');
@@ -237,13 +303,52 @@ function previewImage(input) {
     }
 }
 
-function resetImagePreview() {
+function previewImageUrl(input) {
+    const val = input.value.trim();
+    const container = document.getElementById('urlPreviewContainer');
+    const img = document.getElementById('urlPreviewImg');
+    if (val.startsWith('http://') || val.startsWith('https://')) {
+        img.src = val;
+        container.classList.remove('hidden');
+        img.onerror = function() { container.classList.add('hidden'); };
+        img.onload  = function() { container.classList.remove('hidden'); };
+    } else {
+        container.classList.add('hidden');
+        img.src = '';
+    }
+}
+
+function showExistingImagePreview(url) {
     const preview = document.getElementById('imagePreview');
-    const placeholder = document.getElementById('imagePlaceholder');
+    document.getElementById('imagePlaceholder').classList.add('hidden');
     const existingImg = preview.querySelector('img');
     if (existingImg) existingImg.remove();
-    placeholder.classList.remove('hidden');
+    const img = document.createElement('img');
+    img.src = url;
+    img.className = 'w-full h-full object-cover';
+    preview.appendChild(img);
+}
+
+function resetImagePreview() {
+    // Reset to upload tab
+    const tabUpload = document.getElementById('tabUpload');
+    const tabUrl    = document.getElementById('tabUrl');
+    tabUpload.classList.add('bg-white', 'text-gray-700', 'shadow-sm');
+    tabUpload.classList.remove('text-gray-400');
+    tabUrl.classList.remove('bg-white', 'text-gray-700', 'shadow-sm');
+    tabUrl.classList.add('text-gray-400');
+    document.getElementById('uploadSection').classList.remove('hidden');
+    document.getElementById('urlSection').classList.add('hidden');
+    // Reset file preview
+    const preview = document.getElementById('imagePreview');
+    const existingImg = preview.querySelector('img');
+    if (existingImg) existingImg.remove();
+    document.getElementById('imagePlaceholder').classList.remove('hidden');
     document.getElementById('imageInput').value = '';
+    // Reset URL fields
+    document.getElementById('imageUrlInput').value = '';
+    document.getElementById('urlPreviewContainer').classList.add('hidden');
+    document.getElementById('urlPreviewImg').src = '';
 }
 
 // Close modal on Escape

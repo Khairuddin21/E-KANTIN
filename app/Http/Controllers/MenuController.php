@@ -33,6 +33,7 @@ class MenuController extends Controller
             'price'       => 'required|integer|min:0',
             'category'    => 'required|in:makanan,minuman,snack',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image_url'   => 'nullable|url|max:2048',
         ]);
 
         $validated['seller_id']    = Auth::id();
@@ -40,8 +41,11 @@ class MenuController extends Controller
 
         if ($request->hasFile('image')) {
             $validated['image'] = $request->file('image')->store('menus', 'public');
+        } elseif ($request->filled('image_url')) {
+            $validated['image'] = $request->image_url;
         }
 
+        unset($validated['image_url']);
         Menu::create($validated);
 
         return back()->with('success', 'Menu berhasil ditambahkan!');
@@ -59,15 +63,24 @@ class MenuController extends Controller
             'price'       => 'required|integer|min:0',
             'category'    => 'required|in:makanan,minuman,snack',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image_url'   => 'nullable|url|max:2048',
         ]);
 
         if ($request->hasFile('image')) {
-            if ($menu->image) {
+            if ($menu->image && !str_starts_with($menu->image, 'http')) {
                 Storage::disk('public')->delete($menu->image);
             }
             $validated['image'] = $request->file('image')->store('menus', 'public');
+        } elseif ($request->filled('image_url')) {
+            if ($menu->image && !str_starts_with($menu->image, 'http')) {
+                Storage::disk('public')->delete($menu->image);
+            }
+            $validated['image'] = $request->image_url;
+        } else {
+            unset($validated['image']);
         }
 
+        unset($validated['image_url']);
         $menu->update($validated);
 
         return back()->with('success', 'Menu berhasil diperbarui!');

@@ -16,6 +16,10 @@ class Order extends Model
         'pickup_time',
         'total_price',
         'status',
+        'payment_method',
+        'snap_token',
+        'midtrans_order_id',
+        'payment_status',
     ];
 
     protected function casts(): array
