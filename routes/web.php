@@ -9,6 +9,8 @@ use App\Http\Controllers\SellerDashboardController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\SellerOrderController;
 use App\Http\Controllers\SellerReportController;
+use App\Http\Controllers\Seller\SellerWalletController;
+use App\Http\Controllers\Admin\AdminWithdrawalController;
 use Illuminate\Support\Facades\Route;
 
 // Landing
@@ -49,10 +51,20 @@ Route::middleware(['auth', 'role:seller'])->prefix('seller')->group(function () 
     Route::get('/orders',           [SellerOrderController::class, 'index'])->name('seller.orders');
     Route::patch('/orders/{order}', [SellerOrderController::class, 'updateStatus'])->name('seller.orders.update');
     Route::get('/reports',          [SellerReportController::class, 'index'])->name('seller.reports');
+    Route::get('/wallet',           [SellerWalletController::class, 'wallet'])->name('seller.wallet');
+    Route::post('/withdraw',        [SellerWalletController::class, 'storeWithdrawal'])->name('seller.withdraw.store');
+    Route::get('/withdrawals',      [SellerWalletController::class, 'history'])->name('seller.withdrawals');
 });
 
 // Admin / Cashier stubs
+Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->group(function () {
+    Route::get('/dashboard', fn() => 'Admin Dashboard')->name('admin.dashboard');
+    Route::get('/withdrawals',                [AdminWithdrawalController::class, 'index'])->name('admin.withdrawals');
+    Route::patch('/withdrawals/{withdrawal}/approve', [AdminWithdrawalController::class, 'approve'])->name('admin.withdrawals.approve');
+    Route::patch('/withdrawals/{withdrawal}/reject',  [AdminWithdrawalController::class, 'reject'])->name('admin.withdrawals.reject');
+    Route::patch('/withdrawals/{withdrawal}/paid',    [AdminWithdrawalController::class, 'markPaid'])->name('admin.withdrawals.paid');
+});
+
 Route::middleware('auth')->group(function () {
-    Route::get('/admin/dashboard',   fn() => 'Admin Dashboard')->name('admin.dashboard');
     Route::get('/cashier/dashboard', fn() => 'Cashier Dashboard')->name('cashier.dashboard');
 });

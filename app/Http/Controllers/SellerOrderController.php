@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Menu;
 use App\Models\Order;
+use App\Models\SellerWallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,6 +47,15 @@ class SellerOrderController extends Controller
         ]);
 
         $order->update(['status' => $request->status]);
+
+        // Credit seller wallet when order is completed
+        if ($request->status === 'completed') {
+            $wallet = SellerWallet::firstOrCreate(
+                ['seller_id' => Auth::id()],
+                ['balance' => 0]
+            );
+            $wallet->increment('balance', $order->total_price);
+        }
 
         $labels = [
             'pending'   => 'Menunggu',
