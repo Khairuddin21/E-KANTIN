@@ -13,6 +13,7 @@ use App\Http\Controllers\SellerOrderController;
 use App\Http\Controllers\SellerReportController;
 use App\Http\Controllers\Seller\SellerWalletController;
 use App\Http\Controllers\Admin\AdminWithdrawalController;
+use App\Http\Controllers\TopupController;
 use Illuminate\Support\Facades\Route;
 
 // Landing
@@ -23,6 +24,8 @@ Route::get('/', function () {
 // Midtrans Notification Webhook (no auth, no CSRF)
 Route::post('/midtrans/notification', [CheckoutController::class, 'midtransNotification'])
     ->name('midtrans.notification');
+Route::post('/midtrans/topup-notification', [TopupController::class, 'notification'])
+    ->name('midtrans.topup.notification');
 
 // Auth
 Route::middleware('guest')->group(function () {
@@ -55,6 +58,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/student/checkout',  [CheckoutController::class, 'checkout'])->name('student.checkout');
     Route::post('/student/checkout', [CheckoutController::class, 'processCheckout'])->name('student.checkout.process');
     Route::get('/student/order-success/{order}', [CheckoutController::class, 'orderSuccess'])->name('student.order.success');
+    Route::post('/student/order/{order}/cancel', [CheckoutController::class, 'cancelOrder'])->name('student.order.cancel');
+
+    // Profile
+    Route::get('/student/profile',  [\App\Http\Controllers\ProfileController::class, 'edit'])->name('student.profile');
+    Route::put('/student/profile',  [\App\Http\Controllers\ProfileController::class, 'update'])->name('student.profile.update');
+
+    // Top Up
+    Route::post('/student/topup', [TopupController::class, 'store'])->name('student.topup.store');
+    Route::post('/student/topup/{topup}/confirm', [TopupController::class, 'confirm'])->name('student.topup.confirm');
 });
 
 // Seller Dashboard
@@ -67,6 +79,7 @@ Route::middleware(['auth', 'role:seller'])->prefix('seller')->group(function () 
     Route::delete('/menus/{menu}',  [MenuController::class, 'destroy'])->name('seller.menus.destroy');
     Route::get('/orders',           [SellerOrderController::class, 'index'])->name('seller.orders');
     Route::patch('/orders/{order}', [SellerOrderController::class, 'updateStatus'])->name('seller.orders.update');
+    Route::delete('/orders/{order}/dismiss', [SellerOrderController::class, 'dismiss'])->name('seller.orders.dismiss');
     Route::get('/reports',          [SellerReportController::class, 'index'])->name('seller.reports');
     Route::get('/wallet',           [SellerWalletController::class, 'wallet'])->name('seller.wallet');
     Route::post('/withdraw',        [SellerWalletController::class, 'storeWithdrawal'])->name('seller.withdraw.store');

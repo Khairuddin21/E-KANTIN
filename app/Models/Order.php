@@ -20,6 +20,7 @@ class Order extends Model
         'snap_token',
         'midtrans_order_id',
         'payment_status',
+        'dismissed_by_seller',
     ];
 
     protected function casts(): array

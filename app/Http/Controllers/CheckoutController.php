@@ -60,12 +60,19 @@ class CheckoutController extends Controller
             ->get();
 
         if ($cartItems->isEmpty()) {
+            if ($request->expectsJson()) {
+                return response()->json(['error' => 'Keranjang kosong.'], 422);
+            }
             return redirect()->route('student.menu')->with('error', 'Keranjang kosong.');
         }
 
         foreach ($cartItems as $item) {
             if (!$item->menu || !$item->menu->is_available) {
-                return back()->with('error', "Menu \"{$item->menu->name}\" sudah tidak tersedia.");
+                $msg = "Menu \"{$item->menu->name}\" sudah tidak tersedia.";
+                if ($request->expectsJson()) {
+                    return response()->json(['error' => $msg], 422);
+                }
+                return back()->with('error', $msg);
             }
         }
 
@@ -74,6 +81,9 @@ class CheckoutController extends Controller
         // ─── WALLET PAYMENT ─────────────────────────────────────────
         if ($validated['payment_method'] === 'wallet') {
             if ($user->balance < $totalPrice) {
+                if ($request->expectsJson()) {
+                    return response()->json(['error' => 'Saldo tidak cukup.'], 422);
+                }
                 return back()->with('error', 'Saldo tidak cukup.');
             }
 
@@ -111,6 +121,18 @@ class CheckoutController extends Controller
 
                 return $order;
             });
+
+            // Return JSON for AJAX requests, redirect for form submissions
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success'  => true,
+                    'order_id' => $order->id,
+                    'order_code' => '#' . str_pad($order->id, 5, '0', STR_PAD_LEFT),
+                    'total'    => 'Rp ' . number_format($order->total_price, 0, ',', '.'),
+                    'pickup'   => $order->pickup_time,
+                    'method'   => 'wallet',
+                ]);
+            }
 
             return redirect()->route('student.order.success', $order)->with('success', 'Pesanan berhasil dibuat!');
         }
@@ -257,5 +279,26 @@ class CheckoutController extends Controller
         $order->load('items');
 
         return view('dashboard.order-success', compact('order'));
+    }
+
+    /**
+     * Cancel an unpaid Midtrans order (user closed Snap popup).
+     */
+    public function cancelOrder(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        if ($order->payment_method !== 'midtrans' || $order->payment_status !== 'unpaid') {
+            return response()->json(['error' => 'Pesanan tidak bisa dibatalkan.'], 422);
+        }
+
+        $order->update([
+            'payment_status' => 'failed',
+            'status'         => 'cancelled',
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Pesanan dibatalkan.']);
     }
 }

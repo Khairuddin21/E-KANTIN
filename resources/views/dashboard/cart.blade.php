@@ -144,6 +144,7 @@ function cartPage() {
                     document.getElementById('qty-' + cartId).textContent = qty;
                     document.getElementById('subtotal-' + cartId).textContent = this.formatRp(data.subtotal);
                     document.getElementById('cart-total').textContent = this.formatRp(data.total);
+                    if (typeof updateSidebarCartBadge === 'function') updateSidebarCartBadge(data.cart_count);
                     this.showToast(data.message);
                     // Reload to update button states
                     setTimeout(() => window.location.reload(), 300);
@@ -173,8 +174,7 @@ function cartPage() {
                         el.style.transform = 'translateX(20px)';
                         setTimeout(() => {
                             el.remove();
-                            document.getElementById('cart-total').textContent = this.formatRp(data.total);
-                            if (data.cart_count === 0) window.location.reload();
+                            document.getElementById('cart-total').textContent = this.formatRp(data.total);                            if (typeof updateSidebarCartBadge === 'function') updateSidebarCartBadge(data.cart_count);                            if (data.cart_count === 0) window.location.reload();
                         }, 300);
                     }
                     this.showToast(data.message);

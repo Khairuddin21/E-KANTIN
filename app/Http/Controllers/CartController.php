@@ -11,10 +11,11 @@ class CartController extends Controller
 {
     public function menuPage()
     {
-        $menus = Menu::where('is_available', true)->latest()->get();
+        $menus = Menu::with('seller')->where('is_available', true)->latest()->get();
         $cartCount = Cart::where('user_id', Auth::id())->sum('quantity');
+        $sellers = $menus->pluck('seller')->unique('id')->filter()->values();
 
-        return view('dashboard.menu', compact('menus', 'cartCount'));
+        return view('dashboard.menu', compact('menus', 'cartCount', 'sellers'));
     }
 
     public function index()

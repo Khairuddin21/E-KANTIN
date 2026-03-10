@@ -71,6 +71,70 @@
         </div>
     </div>
 
+    {{-- Charts Row 1: Weekly Revenue + Order Status --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {{-- Weekly Revenue Bar Chart --}}
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <h3 class="font-semibold text-dark">Pendapatan 7 Hari Terakhir</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Pendapatan harian (tidak termasuk pesanan batal)</p>
+                </div>
+                <span class="text-xs font-medium px-2.5 py-1 bg-green-50 text-green-600 rounded-full">
+                    Rp {{ number_format($weeklyRevenue->sum('total'), 0, ',', '.') }}
+                </span>
+            </div>
+            <div class="h-56">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+
+        {{-- Order Status Donut --}}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div class="mb-5">
+                <h3 class="font-semibold text-dark">Status Pesanan</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Distribusi status hari ini</p>
+            </div>
+            <div class="flex items-center justify-center h-44">
+                <canvas id="statusChart"></canvas>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span><span class="text-xs text-gray-500">Menunggu ({{ $statusCounts['pending'] }})</span></div>
+                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span><span class="text-xs text-gray-500">Diproses ({{ $statusCounts['preparing'] }})</span></div>
+                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-green-400"></span><span class="text-xs text-gray-500">Siap Ambil ({{ $statusCounts['ready'] }})</span></div>
+                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span><span class="text-xs text-gray-500">Selesai ({{ $statusCounts['completed'] }})</span></div>
+                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-red-400"></span><span class="text-xs text-gray-500">Batal ({{ $statusCounts['cancelled'] }})</span></div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Charts Row 2: Top Menus + Hourly Distribution --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {{-- Top Selling Menus --}}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div class="mb-5">
+                <h3 class="font-semibold text-dark">Menu Terlaris</h3>
+                <p class="text-xs text-gray-400 mt-0.5">5 menu paling banyak dipesan (7 hari terakhir)</p>
+            </div>
+            @if($topMenus->isEmpty())
+                <div class="py-8 text-center">
+                    <p class="text-gray-300 text-sm">Belum ada data penjualan.</p>
+                </div>
+            @else
+                <div class="h-56"><canvas id="topMenusChart"></canvas></div>
+            @endif
+        </div>
+
+        {{-- Hourly Order Distribution --}}
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div class="mb-5">
+                <h3 class="font-semibold text-dark">Jam Ramai Pesanan</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Distribusi pesanan per jam hari ini</p>
+            </div>
+            <div class="h-56"><canvas id="hourlyChart"></canvas></div>
+        </div>
+    </div>
+
     {{-- Recent Orders --}}
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -133,3 +197,176 @@
     </div>
 </div>
 @endsection
+
+@push('head')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const brandColor = '#E8850A';
+    const brandLight = 'rgba(232,133,10,0.15)';
+
+    // ── Weekly Revenue Bar Chart ─────────────────────────────
+    const revenueData = @json($weeklyRevenue);
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'bar',
+        data: {
+            labels: revenueData.map(d => [d.day, d.date]),
+            datasets: [{
+                label: 'Pendapatan',
+                data: revenueData.map(d => d.total),
+                backgroundColor: revenueData.map((_, i) => i === revenueData.length - 1 ? brandColor : brandLight),
+                borderColor: brandColor,
+                borderWidth: 1,
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => 'Rp ' + ctx.parsed.y.toLocaleString('id-ID')
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.04)' },
+                    ticks: {
+                        callback: v => v >= 1000 ? (v/1000) + 'k' : v,
+                        font: { size: 11 }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 11 } }
+                }
+            }
+        }
+    });
+
+    // ── Order Status Donut ───────────────────────────────────
+    const statusData = @json($statusCounts);
+    const statusValues = Object.values(statusData);
+    const hasStatusData = statusValues.some(v => v > 0);
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Menunggu', 'Diproses', 'Siap Ambil', 'Selesai', 'Batal'],
+            datasets: [{
+                data: hasStatusData ? statusValues : [1],
+                backgroundColor: hasStatusData
+                    ? ['#FBBF24', '#60A5FA', '#34D399', '#9CA3AF', '#F87171']
+                    : ['#F3F4F6'],
+                borderWidth: 0,
+                spacing: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: hasStatusData }
+            }
+        }
+    });
+
+    // ── Top Menus Horizontal Bar ─────────────────────────────
+    @if($topMenus->isNotEmpty())
+    const topMenusData = @json($topMenus);
+    const menuColors = ['#E8850A', '#FB923C', '#FDBA74', '#FED7AA', '#FFEDD5'];
+    new Chart(document.getElementById('topMenusChart'), {
+        type: 'bar',
+        data: {
+            labels: topMenusData.map(m => m.menu_name),
+            datasets: [{
+                label: 'Terjual',
+                data: topMenusData.map(m => m.total_sold),
+                backgroundColor: topMenusData.map((_, i) => menuColors[i] || menuColors[4]),
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.parsed.x + ' porsi'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.04)' },
+                    ticks: { stepSize: 1, font: { size: 11 } }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { font: { size: 11 } }
+                }
+            }
+        }
+    });
+    @endif
+
+    // ── Hourly Distribution Area Chart ───────────────────────
+    const hourlyData = @json($hourlyOrders);
+    new Chart(document.getElementById('hourlyChart'), {
+        type: 'line',
+        data: {
+            labels: hourlyData.map(h => h.hour),
+            datasets: [{
+                label: 'Pesanan',
+                data: hourlyData.map(h => h.count),
+                borderColor: '#8B5CF6',
+                backgroundColor: 'rgba(139,92,246,0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointBackgroundColor: '#8B5CF6',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.parsed.y + ' pesanan'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.04)' },
+                    ticks: { stepSize: 1, font: { size: 11 } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 11 } }
+                }
+            }
+        }
+    });
+});
+</script>
+@endpush
